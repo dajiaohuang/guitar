@@ -40,6 +40,7 @@ tablature_presets_select = document.getElementById("tablature-presets")
 # disable_outside_scale_checkbox = document.getElementById("disable-outside-scale")
 multi_row_selection_mode_input = document.getElementById("multi-row-selection-mode")
 overwrite_mode_input = document.getElementById("overwrite-mode")
+keytar_mode_input = document.getElementById("keytar-mode")
 undo_button = document.getElementById("undo")
 redo_button = document.getElementById("redo")
 keys_container = document.getElementById("keys")
@@ -132,6 +133,87 @@ tablature_editor.editor.session.on "changeOverwrite", ->
 	overwrite_mode_input.checked = tablature_editor.editor.session.getOverwrite()
 	return
 
+keytar_mode = no
+keytar_frets = [0, 0, 0, 0]
+keytar_fret_keys_by_string = [null, null, null, null]
+keytar_plucking_notes = {}
+
+keytar_fret_key_map =
+	49: string: 0, fret: 1 # 1
+	50: string: 0, fret: 2 # 2
+	51: string: 0, fret: 3 # 3
+	81: string: 1, fret: 1 # Q
+	87: string: 1, fret: 2 # W
+	69: string: 1, fret: 3 # E
+	65: string: 2, fret: 1 # A
+	83: string: 2, fret: 2 # S
+	68: string: 2, fret: 3 # D
+	90: string: 3, fret: 1 # Z
+	88: string: 3, fret: 2 # X
+	67: string: 3, fret: 3 # C
+
+keytar_pluck_key_map =
+	8: 0 # Backspace
+	220: 1 # Backslash
+	13: 2 # Enter
+	16: 3 # Shift
+
+is_text_input_target = (target)->
+	target?.tagName?.match /textarea|input|select/i
+
+handle_keytar_keydown = (e)->
+	key = e.keyCode
+	fret_spec = keytar_fret_key_map[key]
+	if fret_spec?
+		e.preventDefault()
+		keytar_fret_keys_by_string[fret_spec.string] = key
+		keytar_frets[fret_spec.string] = fret_spec.fret
+		return on
+
+	pluck_string_index = keytar_pluck_key_map[key]
+	if pluck_string_index?
+		return on if keytar_plucking_notes[key] # prevent repeat
+		e.preventDefault()
+		str = fretboard.strings[pluck_string_index]
+		PLAYING_ID = Math.random()
+		str.PLAYING_ID = PLAYING_ID
+		str.play(keytar_frets[pluck_string_index] ? 0)
+		keytar_plucking_notes[key] =
+			string_index: pluck_string_index
+			PLAYING_ID: PLAYING_ID
+		return on
+
+	off
+
+handle_keytar_keyup = (e)->
+	key = e.keyCode
+	fret_spec = keytar_fret_key_map[key]
+	if fret_spec?
+		e.preventDefault()
+		if keytar_fret_keys_by_string[fret_spec.string] is key
+			keytar_fret_keys_by_string[fret_spec.string] = null
+			keytar_frets[fret_spec.string] = 0
+		return on
+
+	pluck_note = keytar_plucking_notes[key]
+	if pluck_note?
+		e.preventDefault()
+		str = fretboard.strings[pluck_note.string_index]
+		str.release() if str.PLAYING_ID is pluck_note.PLAYING_ID
+		delete keytar_plucking_notes[key]
+		return on
+
+	off
+
+do update_keytar_mode = ->
+	keytar_mode = keytar_mode_input?.checked
+	try localStorage.guitar_keytar_mode = "#{keytar_mode}" if keytar_mode_input?
+	return
+if keytar_mode_input?
+	try keytar_mode_input.checked = localStorage.guitar_keytar_mode is "true"
+	keytar_mode_input.addEventListener "change", update_keytar_mode
+	update_keytar_mode()
+
 $theme = $(".theme")
 
 try
@@ -159,6 +241,9 @@ do animate = =>
 $$ = $(window)
 
 $$.on "keyup", (e)->
+	if keytar_mode and not is_text_input_target(e.target)
+		return if handle_keytar_keyup(e)
+
 	if e.keyCode is 32 # Spacebar
 		sustain = off
 		for string in fretboard.strings
@@ -172,6 +257,9 @@ $$.on "keydown", (e)->
 	if e.ctrlKey and key is 65 # Ctrl+A
 		tablature_editor.editor.focus()
 		tablature_editor.editor.selection.selectAll()
+
+	if keytar_mode and not is_text_input_target(e.target) and not e.ctrlKey and not e.altKey and not e.metaKey
+		return if handle_keytar_keydown(e)
 	
 	return if e.ctrlKey or e.shiftKey or e.altKey or key is 9 or key > ~~100
 	
@@ -181,7 +269,7 @@ $$.on "keydown", (e)->
 	else if key is 32 # Spacebar
 		sustain = on
 	else
-		unless e.target.tagName.match /textarea|input|select/i
+		unless is_text_input_target(e.target)
 			
 			return if fretboard.playing_notes[key] # prevent repeat
 			play = song.notes[song.pos]
@@ -215,6 +303,10 @@ $$.on "keydown", (e)->
 	return
 
 $$.on "blur", ->
+	keytar_plucking_notes = {}
+	for i in [0...keytar_frets.length]
+		keytar_frets[i] = 0
+		keytar_fret_keys_by_string[i] = null
 	string.stop() for string in fretboard.strings
 
 # @TODO: maybe listen for change and indicate that you need to unfocus it to update
