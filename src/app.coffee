@@ -139,19 +139,18 @@ keytar_fret_keys_by_string = [null, null, null, null]
 keytar_plucking_notes = {}
 fretboard.keytar_frets = keytar_frets
 
-keytar_fret_key_map =
-	49: string: 0, fret: 1 # 1
-	50: string: 0, fret: 2 # 2
-	51: string: 0, fret: 3 # 3
-	81: string: 1, fret: 1 # Q
-	87: string: 1, fret: 2 # W
-	69: string: 1, fret: 3 # E
-	65: string: 2, fret: 1 # A
-	83: string: 2, fret: 2 # S
-	68: string: 2, fret: 3 # D
-	90: string: 3, fret: 1 # Z
-	88: string: 3, fret: 2 # X
-	67: string: 3, fret: 3 # C
+keytar_fret_key_rows = [
+	[49, 50, 51, 52, 53, 54, 55, 56, 57, 48, 189, 187] # 1234567890-=
+	[81, 87, 69, 82, 84, 89, 85, 73, 79, 80, 219, 221] # qwertyuiop[]
+	[65, 83, 68, 70, 71, 72, 74, 75, 76, 186, 222] # asdfghjkl;'
+	[90, 88, 67, 86, 66, 78, 77, 188, 190, 191] # zxcvbnm,./
+]
+keytar_fret_key_map = {}
+for row, string_index in keytar_fret_key_rows
+	for key_code, key_index in row
+		keytar_fret_key_map[key_code] =
+			string: string_index
+			fret: key_index + 1
 
 keytar_pluck_key_map =
 	8: 0 # Backspace
