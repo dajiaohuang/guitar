@@ -137,6 +137,7 @@ keytar_mode = no
 keytar_frets = [0, 0, 0, 0]
 keytar_fret_keys_by_string = [null, null, null, null]
 keytar_plucking_notes = {}
+fretboard.keytar_frets = keytar_frets
 
 keytar_fret_key_map =
 	49: string: 0, fret: 1 # 1
@@ -207,6 +208,14 @@ handle_keytar_keyup = (e)->
 
 do update_keytar_mode = ->
 	keytar_mode = keytar_mode_input?.checked
+	unless keytar_mode
+		for pluck_key, pluck_note of keytar_plucking_notes
+			str = fretboard.strings[pluck_note.string_index]
+			str.release() if str.PLAYING_ID is pluck_note.PLAYING_ID
+		keytar_plucking_notes = {}
+		for i in [0...keytar_frets.length]
+			keytar_frets[i] = 0
+			keytar_fret_keys_by_string[i] = null
 	try localStorage.guitar_keytar_mode = "#{keytar_mode}" if keytar_mode_input?
 	return
 if keytar_mode_input?
