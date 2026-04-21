@@ -250,7 +250,9 @@ $$ = $(window)
 
 $$.on "keyup", (e)->
 	if keytar_mode and not is_text_input_target(e.target)
-		return if handle_keytar_keyup(e)
+		handle_keytar_keyup(e)
+		e.preventDefault()
+		return
 
 	if e.keyCode is 32 # Spacebar
 		sustain = off
@@ -266,8 +268,10 @@ $$.on "keydown", (e)->
 		tablature_editor.editor.focus()
 		tablature_editor.editor.selection.selectAll()
 
-	if keytar_mode and not is_text_input_target(e.target) and not e.ctrlKey and not e.altKey and not e.metaKey
-		return if handle_keytar_keydown(e)
+	if keytar_mode and not is_text_input_target(e.target)
+		handle_keytar_keydown(e)
+		e.preventDefault()
+		return
 	
 	return if e.ctrlKey or e.shiftKey or e.altKey or key is 9 or key > ~~100
 	
