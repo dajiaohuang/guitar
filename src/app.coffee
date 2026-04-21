@@ -188,18 +188,19 @@ sync_keebtar_keyboard_lock = ->
 	return
 
 handle_keebtar_keydown = (e)->
+	e.preventDefault()
+	if e.code?.startsWith("Numpad")
+		return
 	key = e.keyCode
 	fret_spec = keebtar_fret_key_map[key]
 	if fret_spec?
-		e.preventDefault()
 		keebtar_fret_keys_by_string[fret_spec.string] = key
 		keebtar_frets[fret_spec.string] = fret_spec.fret
-		return on
+		return
 
 	pluck_string_index = keebtar_pluck_key_map[key]
 	if pluck_string_index?
-		return on if keebtar_plucking_notes[key] # prevent repeat
-		e.preventDefault()
+		return if keebtar_plucking_notes[key] # prevent repeat
 		str = fretboard.strings[pluck_string_index]
 		PLAYING_ID = Math.random()
 		str.PLAYING_ID = PLAYING_ID
@@ -207,29 +208,24 @@ handle_keebtar_keydown = (e)->
 		keebtar_plucking_notes[key] =
 			string_index: pluck_string_index
 			PLAYING_ID: PLAYING_ID
-		return on
-
-	off
 
 handle_keebtar_keyup = (e)->
+	e.preventDefault()
+	if e.code?.startsWith("Numpad")
+		return
 	key = e.keyCode
 	fret_spec = keebtar_fret_key_map[key]
 	if fret_spec?
-		e.preventDefault()
 		if keebtar_fret_keys_by_string[fret_spec.string] is key
 			keebtar_fret_keys_by_string[fret_spec.string] = null
 			keebtar_frets[fret_spec.string] = 0
-		return on
+		return
 
 	pluck_note = keebtar_plucking_notes[key]
 	if pluck_note?
-		e.preventDefault()
 		str = fretboard.strings[pluck_note.string_index]
 		str.release() if str.PLAYING_ID is pluck_note.PLAYING_ID
 		delete keebtar_plucking_notes[key]
-		return on
-
-	off
 
 do update_keebtar_mode = ->
 	keebtar_mode = keebtar_mode_input?.checked
