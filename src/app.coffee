@@ -134,6 +134,7 @@ tablature_editor.editor.session.on "changeOverwrite", ->
 	return
 
 keytar_mode = no
+keytar_keyboard_locked = no
 keytar_frets = [0, 0, 0, 0]
 keytar_fret_keys_by_string = [null, null, null, null]
 keytar_plucking_notes = {}
@@ -160,6 +161,31 @@ keytar_pluck_key_map =
 
 is_text_input_target = (target)->
 	target?.tagName?.match /textarea|input|select/i
+
+request_keytar_keyboard_lock = ->
+	return unless keytar_mode
+	return if keytar_keyboard_locked
+	return unless navigator?.keyboard?.lock?
+	navigator.keyboard.lock()
+	.then ->
+		keytar_keyboard_locked = on
+	.catch ->
+		keytar_keyboard_locked = off
+	return
+
+release_keytar_keyboard_lock = ->
+	return unless navigator?.keyboard?.unlock?
+	navigator.keyboard.unlock()
+	keytar_keyboard_locked = off
+	return
+
+sync_keytar_keyboard_lock = ->
+	active_target = document.activeElement
+	if keytar_mode and not is_text_input_target(active_target) and document.hasFocus()
+		request_keytar_keyboard_lock()
+	else
+		release_keytar_keyboard_lock()
+	return
 
 handle_keytar_keydown = (e)->
 	key = e.keyCode
@@ -215,6 +241,7 @@ do update_keytar_mode = ->
 		for i in [0...keytar_frets.length]
 			keytar_frets[i] = 0
 			keytar_fret_keys_by_string[i] = null
+	sync_keytar_keyboard_lock()
 	try localStorage.guitar_keytar_mode = "#{keytar_mode}" if keytar_mode_input?
 	return
 if keytar_mode_input?
@@ -247,6 +274,10 @@ do animate = =>
 
 
 $$ = $(window)
+
+document.addEventListener "focusin", sync_keytar_keyboard_lock
+document.addEventListener "focusout", -> setTimeout(sync_keytar_keyboard_lock, 0)
+$$.on "focus", sync_keytar_keyboard_lock
 
 $$.on "keyup", (e)->
 	if keytar_mode and not is_text_input_target(e.target)
@@ -315,6 +346,7 @@ $$.on "keydown", (e)->
 	return
 
 $$.on "blur", ->
+	release_keytar_keyboard_lock()
 	keytar_plucking_notes = {}
 	for i in [0...keytar_frets.length]
 		keytar_frets[i] = 0
