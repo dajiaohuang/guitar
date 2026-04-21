@@ -40,7 +40,7 @@ tablature_presets_select = document.getElementById("tablature-presets")
 # disable_outside_scale_checkbox = document.getElementById("disable-outside-scale")
 multi_row_selection_mode_input = document.getElementById("multi-row-selection-mode")
 overwrite_mode_input = document.getElementById("overwrite-mode")
-keytar_mode_input = document.getElementById("keytar-mode")
+keebtar_mode_input = document.getElementById("keebtar-mode")
 undo_button = document.getElementById("undo")
 redo_button = document.getElementById("redo")
 keys_container = document.getElementById("keys")
@@ -133,27 +133,27 @@ tablature_editor.editor.session.on "changeOverwrite", ->
 	overwrite_mode_input.checked = tablature_editor.editor.session.getOverwrite()
 	return
 
-keytar_mode = no
-keytar_keyboard_locked = no
-keytar_frets = [0, 0, 0, 0]
-keytar_fret_keys_by_string = [null, null, null, null]
-keytar_plucking_notes = {}
-fretboard.keytar_frets = keytar_frets
+keebtar_mode = no
+keebtar_keyboard_locked = no
+keebtar_frets = [0, 0, 0, 0]
+keebtar_fret_keys_by_string = [null, null, null, null]
+keebtar_plucking_notes = {}
+fretboard.keebtar_frets = keebtar_frets
 
-keytar_fret_key_rows = [
+keebtar_fret_key_rows = [
 	[49, 50, 51, 52, 53, 54, 55, 56, 57, 48, 189, 187] # 1234567890-=
 	[81, 87, 69, 82, 84, 89, 85, 73, 79, 80, 219, 221] # qwertyuiop[]
 	[65, 83, 68, 70, 71, 72, 74, 75, 76, 186, 222] # asdfghjkl;'
 	[90, 88, 67, 86, 66, 78, 77, 188, 190, 191] # zxcvbnm,./
 ]
-keytar_fret_key_map = {}
-for row, string_index in keytar_fret_key_rows
+keebtar_fret_key_map = {}
+for row, string_index in keebtar_fret_key_rows
 	for key_code, key_index in row
-		keytar_fret_key_map[key_code] =
+		keebtar_fret_key_map[key_code] =
 			string: string_index
 			fret: key_index + 1
 
-keytar_pluck_key_map =
+keebtar_pluck_key_map =
 	8: 0 # Backspace
 	220: 1 # Backslash
 	13: 2 # Enter
@@ -162,92 +162,92 @@ keytar_pluck_key_map =
 is_text_input_target = (target)->
 	target?.tagName?.match /textarea|input|select/i
 
-request_keytar_keyboard_lock = ->
-	return unless keytar_mode
-	return if keytar_keyboard_locked
+request_keebtar_keyboard_lock = ->
+	return unless keebtar_mode
+	return if keebtar_keyboard_locked
 	return unless navigator?.keyboard?.lock?
 	navigator.keyboard.lock()
 	.then ->
-		keytar_keyboard_locked = on
+		keebtar_keyboard_locked = on
 	.catch ->
-		keytar_keyboard_locked = off
+		keebtar_keyboard_locked = off
 	return
 
-release_keytar_keyboard_lock = ->
+release_keebtar_keyboard_lock = ->
 	return unless navigator?.keyboard?.unlock?
 	navigator.keyboard.unlock()
-	keytar_keyboard_locked = off
+	keebtar_keyboard_locked = off
 	return
 
-sync_keytar_keyboard_lock = ->
+sync_keebtar_keyboard_lock = ->
 	active_target = document.activeElement
-	if keytar_mode and not is_text_input_target(active_target) and document.hasFocus()
-		request_keytar_keyboard_lock()
+	if keebtar_mode and not is_text_input_target(active_target) and document.hasFocus()
+		request_keebtar_keyboard_lock()
 	else
-		release_keytar_keyboard_lock()
+		release_keebtar_keyboard_lock()
 	return
 
-handle_keytar_keydown = (e)->
+handle_keebtar_keydown = (e)->
 	key = e.keyCode
-	fret_spec = keytar_fret_key_map[key]
+	fret_spec = keebtar_fret_key_map[key]
 	if fret_spec?
 		e.preventDefault()
-		keytar_fret_keys_by_string[fret_spec.string] = key
-		keytar_frets[fret_spec.string] = fret_spec.fret
+		keebtar_fret_keys_by_string[fret_spec.string] = key
+		keebtar_frets[fret_spec.string] = fret_spec.fret
 		return on
 
-	pluck_string_index = keytar_pluck_key_map[key]
+	pluck_string_index = keebtar_pluck_key_map[key]
 	if pluck_string_index?
-		return on if keytar_plucking_notes[key] # prevent repeat
+		return on if keebtar_plucking_notes[key] # prevent repeat
 		e.preventDefault()
 		str = fretboard.strings[pluck_string_index]
 		PLAYING_ID = Math.random()
 		str.PLAYING_ID = PLAYING_ID
-		str.play(keytar_frets[pluck_string_index] ? 0)
-		keytar_plucking_notes[key] =
+		str.play(keebtar_frets[pluck_string_index] ? 0)
+		keebtar_plucking_notes[key] =
 			string_index: pluck_string_index
 			PLAYING_ID: PLAYING_ID
 		return on
 
 	off
 
-handle_keytar_keyup = (e)->
+handle_keebtar_keyup = (e)->
 	key = e.keyCode
-	fret_spec = keytar_fret_key_map[key]
+	fret_spec = keebtar_fret_key_map[key]
 	if fret_spec?
 		e.preventDefault()
-		if keytar_fret_keys_by_string[fret_spec.string] is key
-			keytar_fret_keys_by_string[fret_spec.string] = null
-			keytar_frets[fret_spec.string] = 0
+		if keebtar_fret_keys_by_string[fret_spec.string] is key
+			keebtar_fret_keys_by_string[fret_spec.string] = null
+			keebtar_frets[fret_spec.string] = 0
 		return on
 
-	pluck_note = keytar_plucking_notes[key]
+	pluck_note = keebtar_plucking_notes[key]
 	if pluck_note?
 		e.preventDefault()
 		str = fretboard.strings[pluck_note.string_index]
 		str.release() if str.PLAYING_ID is pluck_note.PLAYING_ID
-		delete keytar_plucking_notes[key]
+		delete keebtar_plucking_notes[key]
 		return on
 
 	off
 
-do update_keytar_mode = ->
-	keytar_mode = keytar_mode_input?.checked
-	unless keytar_mode
-		for pluck_key, pluck_note of keytar_plucking_notes
+do update_keebtar_mode = ->
+	keebtar_mode = keebtar_mode_input?.checked
+	unless keebtar_mode
+		for pluck_key, pluck_note of keebtar_plucking_notes
 			str = fretboard.strings[pluck_note.string_index]
 			str.release() if str.PLAYING_ID is pluck_note.PLAYING_ID
-		keytar_plucking_notes = {}
-		for i in [0...keytar_frets.length]
-			keytar_frets[i] = 0
-			keytar_fret_keys_by_string[i] = null
-	sync_keytar_keyboard_lock()
-	try localStorage.guitar_keytar_mode = "#{keytar_mode}" if keytar_mode_input?
+		keebtar_plucking_notes = {}
+		for i in [0...keebtar_frets.length]
+			keebtar_frets[i] = 0
+			keebtar_fret_keys_by_string[i] = null
+	sync_keebtar_keyboard_lock()
+	try localStorage.guitar_keebtar_mode = "#{keebtar_mode}" if keebtar_mode_input?
 	return
-if keytar_mode_input?
-	try keytar_mode_input.checked = localStorage.guitar_keytar_mode is "true"
-	keytar_mode_input.addEventListener "change", update_keytar_mode
-	update_keytar_mode()
+if keebtar_mode_input?
+	try keebtar_mode_input.checked = localStorage.guitar_keebtar_mode is "true"
+	keebtar_mode_input.addEventListener "change", update_keebtar_mode
+	update_keebtar_mode()
 
 $theme = $(".theme")
 
@@ -275,13 +275,13 @@ do animate = =>
 
 $$ = $(window)
 
-document.addEventListener "focusin", sync_keytar_keyboard_lock
-document.addEventListener "focusout", -> setTimeout(sync_keytar_keyboard_lock, 0)
-$$.on "focus", sync_keytar_keyboard_lock
+document.addEventListener "focusin", sync_keebtar_keyboard_lock
+document.addEventListener "focusout", -> setTimeout(sync_keebtar_keyboard_lock, 0)
+$$.on "focus", sync_keebtar_keyboard_lock
 
 $$.on "keyup", (e)->
-	if keytar_mode and not is_text_input_target(e.target)
-		handle_keytar_keyup(e)
+	if keebtar_mode and not is_text_input_target(e.target)
+		handle_keebtar_keyup(e)
 		e.preventDefault()
 		return
 
@@ -299,8 +299,8 @@ $$.on "keydown", (e)->
 		tablature_editor.editor.focus()
 		tablature_editor.editor.selection.selectAll()
 
-	if keytar_mode and not is_text_input_target(e.target)
-		handle_keytar_keydown(e)
+	if keebtar_mode and not is_text_input_target(e.target)
+		handle_keebtar_keydown(e)
 		e.preventDefault()
 		return
 	
@@ -346,11 +346,11 @@ $$.on "keydown", (e)->
 	return
 
 $$.on "blur", ->
-	release_keytar_keyboard_lock()
-	keytar_plucking_notes = {}
-	for i in [0...keytar_frets.length]
-		keytar_frets[i] = 0
-		keytar_fret_keys_by_string[i] = null
+	release_keebtar_keyboard_lock()
+	keebtar_plucking_notes = {}
+	for i in [0...keebtar_frets.length]
+		keebtar_frets[i] = 0
+		keebtar_fret_keys_by_string[i] = null
 	string.stop() for string in fretboard.strings
 
 # @TODO: maybe listen for change and indicate that you need to unfocus it to update

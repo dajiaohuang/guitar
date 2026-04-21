@@ -94,7 +94,7 @@ class @Fretboard
 		@theme = Fretboard.themes["Dark Gray"]
 		
 		@rec_note = null
-		@keytar_frets = []
+		@keebtar_frets = []
 		
 		@playing_notes = {}
 		
@@ -305,9 +305,9 @@ class @Fretboard
 			ctx.fillStyle = "#000"
 			ctx.fillText(str.label, -OSW/2, sy)
 
-		# draw keytar fretting overlays
+		# draw keebtar fretting overlays
 		ctx.fillStyle = "rgba(0, 255, 0, 0.5)"
-		for fret, s in @keytar_frets when fret > 0
+		for fret, s in @keebtar_frets when fret > 0
 			sy = (s+1/2)*sh
 			drawFingerHoldOrOpenNote(fretXs[fret], fretWs[fret], sy, sh)
 		
